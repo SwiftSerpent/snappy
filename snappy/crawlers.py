@@ -5,7 +5,7 @@ from urllib.parse import urlparse, urljoin
 
 
 class UrlCrawler:
-    def __init__(self, base_url, crawl_external=False, external_crawl_depth=2):
+    def __init__(self, base_url, crawl_external=False, external_crawl_depth=2, headers=None):
         self.base_url = base_url
         self.url_list = set()
         self.adjacency_list = {}
@@ -27,7 +27,7 @@ class UrlCrawler:
         return url.endswith(('.jpg', '.jpeg', '.png', '.gif'))
 
     def _get_urls(self, url):
-        response = requests.get(url)
+        response = requests.get(url, headers=self.headers)
         soup = BeautifulSoup(response.text, 'html.parser')
         hrefs = []
         for link in soup.find_all('a'):
