@@ -3,15 +3,15 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin
 
-
-class UrlCrawler:
+class BaseCrawler:
     def __init__(self, base_url, crawl_external=False, external_crawl_depth=2, headers=None):
         self.base_url = base_url
         self.url_list = set()
         self.adjacency_list = {}
         self.crawl_external = crawl_external
         self.external_crawl_depth = external_crawl_depth
-
+        self.headers = headers
+    
     @property
     def internal_urls(self):
         return [url for url in self.url_list if self._is_internal_url(url)]
@@ -25,7 +25,30 @@ class UrlCrawler:
 
     def _is_image(self, url):
         return url.endswith(('.jpg', '.jpeg', '.png', '.gif'))
+    
+    def run(self):
+        raise NotImplementedError
+    
+    def __repr__(self):
+        return f'<{self.__class__.__name__} base_url={self.base_url}>'
+    
+    def __str__(self):
+        return self.__repr__()
+    
+    def __len__(self):
+        return len(self.url_list)
+    
+    def __iter__(self):
+        return iter(self.url_list)
+    
+    def __getitem__(self, index):
+        return list(self.url_list)[index]
+    
+    def __contains__(self, url):
+        return url in self.url_list
 
+
+class UrlCrawler(BaseCrawler):
     def _get_urls(self, url):
         response = requests.get(url, headers=self.headers)
         soup = BeautifulSoup(response.text, 'html.parser')
