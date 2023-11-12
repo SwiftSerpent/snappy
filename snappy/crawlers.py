@@ -55,6 +55,10 @@ class BaseCrawler:
 
 
 class UrlCrawler(BaseCrawler):
+    def __init__(self, base_url, crawl_external=False, external_crawl_depth=2, headers=None, parser='bs4', limit=None):
+        super().__init__(base_url, crawl_external, external_crawl_depth, headers, parser)
+        self.limit = limit
+
     def _get_urls_playwright(self, page, url):
         page.goto(url)
         # Select all <a> tags with href attribute
@@ -84,8 +88,12 @@ class UrlCrawler(BaseCrawler):
             crawled_urls = set()
             current_external_crawl_depth = 0
             queue = [self.base_url]
+            count = 0
 
             while queue:
+                if self.limit and count >= self.limit:
+                    break
+
                 url = queue.pop()
                 if url in crawled_urls:
                     continue
@@ -109,6 +117,8 @@ class UrlCrawler(BaseCrawler):
                         self.url_list.add(page_url)
                         self.adjacency_list[page_url] = []
 
+                count += 1
+
             browser.close()
 
     def run(self):
@@ -119,8 +129,12 @@ class UrlCrawler(BaseCrawler):
         crawled_urls = set()
         current_external_crawl_depth = 0
         queue = [self.base_url]
+        count = 0
 
         while queue:
+            if self.limit and count >= self.limit:
+                break
+
             url = queue.pop()
             if url in crawled_urls:
                 continue
@@ -144,10 +158,13 @@ class UrlCrawler(BaseCrawler):
                     self.url_list.add(page_url)
                     self.adjacency_list[page_url] = []
 
+            count += 1
+
 
 class ImageCrawler(UrlCrawler):
-    def __init__(self, base_url, crawl_external=False, external_crawl_depth=2, headers=None, parser='bs4'):
-        super().__init__(base_url, crawl_external, external_crawl_depth, headers, parser)
+    def __init__(self, base_url, crawl_external=False, external_crawl_depth=2, headers=None, parser='bs4', limit=None):
+        super().__init__(base_url, crawl_external,
+                         external_crawl_depth, headers, parser, limit)
         self.image_list = []
 
     def _get_image_info_playwright(self, page, url):
@@ -194,8 +211,12 @@ class ImageCrawler(UrlCrawler):
             crawled_urls = set()
             current_external_crawl_depth = 0
             queue = [self.base_url]
+            count = 0
 
             while queue:
+                if self.limit and count >= self.limit:
+                    break
+
                 url = queue.pop()
                 if url in crawled_urls:
                     continue
@@ -225,18 +246,24 @@ class ImageCrawler(UrlCrawler):
                         self.url_list.add(page_url)
                         self.adjacency_list[page_url] = []
 
+                count += 1
+
             browser.close()
 
     def run(self):
         if self.parser == 'playwright':
             self._run_playwright()
             return
-        
+
         crawled_urls = set()
         current_external_crawl_depth = 0
         queue = [self.base_url]
+        count = 0
 
         while queue:
+            if self.limit and count >= self.limit:
+                break
+
             url = queue.pop()
             if url in crawled_urls:
                 continue
@@ -265,3 +292,5 @@ class ImageCrawler(UrlCrawler):
                 else:
                     self.url_list.add(page_url)
                     self.adjacency_list[page_url] = []
+
+            count += 1
