@@ -37,6 +37,9 @@ class Screenshotter:
         page.evaluate('window.scrollTo(0, 0)')
 
     def take_screenshot(self, url, filename):
+        if not filename:
+            raise ValueError('Filename cannot be empty.')
+
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
