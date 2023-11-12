@@ -6,7 +6,33 @@ from urllib.parse import urlparse, urljoin
 
 
 class BaseCrawler:
+    """
+    A base class for web crawlers.
+
+    Attributes:
+        base_url (str): The base URL to start crawling from.
+        url_list (set): A set of URLs that have been crawled.
+        adjacency_list (dict): A dictionary representing the adjacency list of the crawled URLs.
+        crawl_external (bool): A flag indicating whether to crawl external URLs.
+        external_crawl_depth (int): The maximum depth to crawl external URLs.
+        headers (dict): A dictionary of headers to use for HTTP requests.
+        parser (str): The parser to use for parsing HTML. Must be either 'bs4' or 'playwright'.
+    """
+
     def __init__(self, base_url, crawl_external=False, external_crawl_depth=2, headers=None, parser='bs4'):
+        """
+        Initializes a new instance of the BaseCrawler class.
+
+        Args:
+            base_url (str): The base URL to start crawling from.
+            crawl_external (bool): A flag indicating whether to crawl external URLs.
+            external_crawl_depth (int): The maximum depth to crawl external URLs.
+            headers (dict): A dictionary of headers to use for HTTP requests.
+            parser (str): The parser to use for parsing HTML. Must be either 'bs4' or 'playwright'.
+
+        Raises:
+            ValueError: If the parser is not 'bs4' or 'playwright'.
+        """
         self.base_url = base_url
         self.url_list = set()
         self.adjacency_list = {}
@@ -20,46 +46,105 @@ class BaseCrawler:
 
     @property
     def internal_urls(self):
+        """
+        Returns a list of internal URLs that have been crawled.
+        """
         return [url for url in self.url_list if self._is_internal_url(url)]
 
     @property
     def external_urls(self):
+        """
+        Returns a list of external URLs that have been crawled.
+        """
         return [url for url in self.url_list if not self._is_internal_url(url)]
 
     def _is_internal_url(self, url):
+        """
+        Returns True if the given URL is internal to the base URL, False otherwise.
+        """
         return urlparse(url).netloc == urlparse(self.base_url).netloc
 
     def _is_image(self, url):
+        """
+        Returns True if the given URL is an image, False otherwise.
+        """
         return url.endswith(('.jpg', '.jpeg', '.png', '.gif'))
 
     def run(self):
+        """
+        Runs the crawler.
+        """
         raise NotImplementedError
 
     def __repr__(self):
+        """
+        Returns a string representation of the BaseCrawler instance.
+        """
         return f'<{self.__class__.__name__} base_url={self.base_url}>'
 
     def __str__(self):
+        """
+        Returns a string representation of the BaseCrawler instance.
+        """
         return self.__repr__()
 
     def __len__(self):
+        """
+        Returns the number of URLs that have been crawled.
+        """
         return len(self.url_list)
 
     def __iter__(self):
+        """
+        Returns an iterator over the URLs that have been crawled.
+        """
         return iter(self.url_list)
 
     def __getitem__(self, index):
+        """
+        Returns the URL at the given index in the list of crawled URLs.
+        """
         return list(self.url_list)[index]
 
     def __contains__(self, url):
+        """
+        Returns True if the given URL has been crawled, False otherwise.
+        """
         return url in self.url_list
 
 
 class UrlCrawler(BaseCrawler):
+    """
+    A class for crawling URLs and building an adjacency list of internal and external links.
+
+    Args:
+        base_url (str): The starting URL to crawl.
+        crawl_external (bool): Whether to crawl external links.
+        external_crawl_depth (int): The maximum depth to crawl external links.
+        headers (dict): Optional headers to include in requests.
+        parser (str): The parser to use for parsing HTML. Either 'bs4' or 'playwright'.
+        limit (int): The maximum number of URLs to crawl.
+
+    Attributes:
+        url_list (set): A set of all crawled URLs.
+        adjacency_list (dict): An adjacency list of internal and external links.
+    """
+
     def __init__(self, base_url, crawl_external=False, external_crawl_depth=2, headers=None, parser='bs4', limit=None):
         super().__init__(base_url, crawl_external, external_crawl_depth, headers, parser)
         self.limit = limit
 
     def _get_urls_playwright(self, page, url):
+        """
+        Get all URLs on a page using Playwright.
+
+        Args:
+            page (playwright.sync_api._generated.Page): The Playwright page object.
+            url (str): The URL of the page to crawl.
+
+        Returns:
+            list: A list of URLs on the page.
+        """
         page.goto(url)
         # Select all <a> tags with href attribute
         hrefs = page.query_selector_all("//a[@href]")
@@ -70,6 +155,15 @@ class UrlCrawler(BaseCrawler):
         return urls
 
     def _get_urls(self, url):
+        """
+        Get all URLs on a page using BeautifulSoup.
+
+        Args:
+            url (str): The URL of the page to crawl.
+
+        Returns:
+            list: A list of URLs on the page.
+        """
         response = requests.get(url, headers=self.headers)
         soup = BeautifulSoup(response.text, 'html.parser')
         hrefs = []
@@ -82,6 +176,9 @@ class UrlCrawler(BaseCrawler):
         return hrefs
 
     def _run_playwright(self):
+        """
+        Crawl URLs using Playwright.
+        """
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
@@ -122,6 +219,9 @@ class UrlCrawler(BaseCrawler):
             browser.close()
 
     def run(self):
+        """
+        Crawl URLs using BeautifulSoup or Playwright, depending on the parser specified.
+        """
         if self.parser == 'playwright':
             self._run_playwright()
             return
@@ -162,6 +262,21 @@ class UrlCrawler(BaseCrawler):
 
 
 class ImageCrawler(UrlCrawler):
+    """
+    A class for crawling images from a given URL.
+
+    Args:
+    base_url (str): The URL to start crawling from.
+    crawl_external (bool): Whether to crawl external URLs.
+    external_crawl_depth (int): The maximum depth to crawl external URLs.
+    headers (dict): A dictionary of headers to include in requests.
+    parser (str): The parser to use for parsing HTML. Either 'bs4' or 'playwright'.
+    limit (int): The maximum number of pages to crawl.
+
+    Attributes:
+    image_list (list): A list of dictionaries containing information about crawled images.
+    """
+
     def __init__(self, base_url, crawl_external=False, external_crawl_depth=2, headers=None, parser='bs4', limit=None):
         super().__init__(base_url, crawl_external,
                          external_crawl_depth, headers, parser, limit)
