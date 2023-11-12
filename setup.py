@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name='swift-snappy',
     version='0.0.1',
-    description='A library for crawling websites and extracting URLs, images, and clean screenshots.',
+    description='Crawl any website, extracting URLs, images, or clean screenshots.',
     author='SwiftSerpent',
     author_email='brownpt98@gmail.com',
     packages=find_packages(),
