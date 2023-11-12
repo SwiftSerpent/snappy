@@ -3,11 +3,6 @@ import os
 
 from playwright.sync_api import sync_playwright
 
-
-import os
-import time
-from playwright.sync_api import sync_playwright
-
 class Screenshotter:
     """
     A class for taking screenshots of web pages.
