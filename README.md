@@ -23,3 +23,4 @@ snapper --csv urls.csv
 snapper --urls "https://www.example.com" "https://www.example.com/blog" \
 --output_dir "test_async_screenshotter" --fullscreen --close_popups --scroll_delay 2 --device "iPhone 11"
 ```
+_Note: current behavior is to take both the default screenshot AND the device screenshot when a device name is given._
