@@ -18,12 +18,12 @@ def write_csv_from_dict(dictionary, filename):
                 writer.writerow([source, target])
 
 async def main():
-    base_url = "https://www.example.com/"  # Replace with the URL you want to crawl
+    base_url = "https://sallysbakingaddiction.com/"  # Replace with the URL you want to crawl
     crawl_external = False
     external_crawl_depth = 1
     headers = None
     parser = 'playwright'
-    limit = 100  # Limit the number of pages to crawl (set to None for unlimited)
+    limit = 1000  # Limit the number of pages to crawl (set to None for unlimited)
 
     url_crawler = UrlCrawler(base_url, crawl_external, external_crawl_depth, headers, parser, limit)
     await url_crawler.run()

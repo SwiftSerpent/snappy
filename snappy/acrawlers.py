@@ -62,13 +62,7 @@ class BaseCrawler:
         """
         Returns True if the given URL is internal to the base URL, False otherwise.
         """
-        parsed_base_url = urlparse(self.base_url)
-        parsed_url = urlparse(url)
-
-        return (
-            parsed_base_url.netloc == parsed_url.netloc and
-            parsed_base_url.path == parsed_url.path
-        )
+        return urlparse(url).netloc == urlparse(self.base_url).netloc
 
     def _is_pdf(self, url):
         """
@@ -145,6 +139,7 @@ class UrlCrawler(BaseCrawler):
     def __init__(self, base_url, crawl_external=False, external_crawl_depth=2, headers=None, parser='bs4', limit=None):
         super().__init__(base_url, crawl_external, external_crawl_depth, headers, parser)
         self.limit = limit
+        
     async def _get_urls_playwright(self, page, url):
         await page.goto(url)
         print(url)
@@ -153,7 +148,9 @@ class UrlCrawler(BaseCrawler):
         urls = [urljoin(url, href) for href in urls]
         urls = [href for href in urls if not self._is_image(href)]
         urls = [href for href in urls if not self._is_pdf(href)]
+        urls = [href.split('#')[0] for href in urls]  # Split out "#" part
         urls = [href.strip('/') for href in urls]
+
         return urls
 
     async def _get_urls(self, url):
@@ -165,7 +162,10 @@ class UrlCrawler(BaseCrawler):
         hrefs = [link.get('href') for link in soup.find_all('a')]
         hrefs = [urljoin(url, href) for href in hrefs]
         hrefs = [href for href in hrefs if not self._is_image(href)]
+        urls = [href for href in urls if not self._is_pdf(href)]
+        urls = [href.split('#')[0] for href in urls]  # Split out "#" part
         hrefs = [href.strip('/') for href in hrefs]
+
         return hrefs
 
     async def _run_playwright(self):

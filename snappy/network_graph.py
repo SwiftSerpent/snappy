@@ -38,6 +38,9 @@ def create_network_graph(urls):
         else:
             incoming_links[target] = 1
 
+        if source not in incoming_links:
+            incoming_links[source] = 1
+
     nx.set_node_attributes(graph, incoming_links, "incoming_links")
     return graph
 
@@ -53,7 +56,10 @@ def save_network_graph(graph, filename):
     font_weight = "bold"
 
     # Get the node sizes based on incoming link count
-    node_sizes = [links * 2 for node, links in graph.nodes(data="incoming_links")]
+
+    multiplier = 1000 * (1 / len(graph.nodes))
+
+    node_sizes = [links * multiplier for node, links in graph.nodes(data="incoming_links")]
 
     nx.draw_networkx(
         graph,
