@@ -62,7 +62,13 @@ class BaseCrawler:
         """
         Returns True if the given URL is internal to the base URL, False otherwise.
         """
-        return urlparse(url).netloc == urlparse(self.base_url).netloc
+        parsed_base_url = urlparse(self.base_url)
+        parsed_url = urlparse(url)
+
+        return (
+            parsed_base_url.netloc == parsed_url.netloc and
+            parsed_base_url.path == parsed_url.path
+        )
 
     def _is_pdf(self, url):
         """

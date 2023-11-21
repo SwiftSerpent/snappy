@@ -70,7 +70,7 @@ def save_network_graph(graph, filename):
 
     plt.box(False)
     plt.axis("off")
-    plt.savefig(filename, dpi=600, bbox_inches="tight")
+    plt.savefig(filename, dpi=300, bbox_inches="tight")
 
 # Usage 
 csv_filename = "links.csv"
