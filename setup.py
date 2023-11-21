@@ -12,6 +12,7 @@ setup(
         'requests',
         'bs4',
         'urllib3',
+        'asyncio',
     ],
     classifiers=[
         'Development Status :: 1 - Planning',
@@ -23,4 +24,9 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
     ],
+    entry_points={
+        'console_scripts': [
+            'snapper = snappy.snapper:main',
+        ],
+    },
 )

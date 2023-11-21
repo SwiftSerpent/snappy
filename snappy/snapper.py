@@ -1,9 +1,14 @@
 import asyncio
 import argparse
 import csv
-from tools import AsyncScreenshotter
+from snappy.tools import AsyncScreenshotter
 
 """
+If installed using pip, replace "python snapper.py" with "snapper" in the following examples.  
+Like this:
+    snapper --urls "https://www.example.com" "https://www.example.com/blog" --output_dir "my_screenshots"
+
+
 Examples:
     1. Capture screenshots for specific URLs:
         python snapper.py --urls "https://www.example.com" "https://www.example.com/blog"
