@@ -2,7 +2,7 @@ import tracemalloc
 import unittest
 import os
 import asyncio
-from snappy.tools import AsyncScreenshotter
+from tools import AsyncScreenshotter
 
 tracemalloc.start()
 

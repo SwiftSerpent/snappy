@@ -1,41 +1,44 @@
-import time
 import os
+import asyncio
+from playwright.async_api import async_playwright
 
-from playwright.sync_api import sync_playwright
-
-class Screenshotter:
+class AsyncScreenshotter:
     """
-    A class for taking screenshots of web pages.
+    A class for taking screenshots of web pages asynchronously.
 
     Args:
         output_dir (str): The directory where the screenshot will be saved. Default is the current directory.
         fullscreen (bool): Whether to take a screenshot of the full screen or just the visible area. Default is False.
         close_popups (bool): Whether to close any popups that appear on the page before taking the screenshot. Default is False.
-        scroll_page (bool): Whether to scroll the page to capture the entire page. Default is False.
+        scroll_delay (int): Whether to scroll the page to capture the entire page. Default is 0.
         format (str): The format of the screenshot. Default is 'png'.
+        device (str): The device type for which the screenshot should be taken. Default is None.
 
     Attributes:
         output_dir (str): The directory where the screenshot will be saved.
         fullscreen (bool): Whether to take a screenshot of the full screen or just the visible area.
         close_popups (bool): Whether to close any popups that appear on the page before taking the screenshot.
-        scroll_page (bool): Whether to scroll the page to capture the entire page.
+        scroll_delay (int): Whether to scroll the page to capture the entire page and how long to wait for resources to load.
         format (str): The format of the screenshot.
+        device (str): The device type for which the screenshot should be taken.
 
     Methods:
         _find_and_close_popups(page): Private method to find and close any popups that appear on the page.
         _scroll_page(page): Private method to scroll the page to capture the entire page.
-        take_screenshot(url, filename): Takes a screenshot of the specified URL and saves it with the specified filename.
+        async take_screenshot(url, filename, device): Takes a screenshot of the specified URL and saves it with the specified filename.
 
     """
 
-    def __init__(self, output_dir='.', fullscreen=False, close_popups=False, scroll_page=False, format='png'):
+    def __init__(self, output_dir='.', fullscreen=False, headless=True, close_popups=False, format='png', device=None, scroll_delay=1):
         self.output_dir = output_dir
         self.fullscreen = fullscreen
+        self.headless = headless
         self.close_popups = close_popups
-        self.scroll_page = scroll_page
+        self.scroll_delay = scroll_delay
         self.format = format
+        self.device = device
 
-    def _find_and_close_popups(self, page):
+    async def _find_and_close_popups(self, page):
         """
         Private method to find and close any popups that appear on the page.
 
@@ -55,15 +58,15 @@ class Screenshotter:
             while len(query_strings) > 0:
                 query_string = query_strings.pop(0)
                 try:
-                    buttons = page.query_selector_all(query_string)
+                    buttons = await page.query_selector_all(query_string)
                     if len(buttons) > 0:
                         for button in buttons:
-                            button.click()
+                            await button.click()
                         break
                 except:
                     continue
 
-    def _scroll_page(self, page):
+    async def _scroll_page(self, page):
         """
         Private method to scroll the page to capture the entire page.
 
@@ -73,17 +76,18 @@ class Screenshotter:
         Returns:
             None
         """
-        page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
-        time.sleep(1)
-        page.evaluate('window.scrollTo(0, 0)')
+        await page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
+        await asyncio.sleep(self.scroll_delay)
+        await page.evaluate('window.scrollTo(0, 0)')
 
-    def take_screenshot(self, url, filename):
+    async def take_screenshot(self, url, filename, device=None):
         """
         Takes a screenshot of the specified URL and saves it with the specified filename.
 
         Args:
             url (str): The URL of the web page to take a screenshot of.
             filename (str): The name of the file to save the screenshot as.
+            device (str): The device type for which the screenshot should be taken. Default is None.
 
         Returns:
             The screenshot as a binary string.
@@ -91,25 +95,32 @@ class Screenshotter:
         if not filename:
             raise ValueError('Filename cannot be empty.')
 
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
-            response = page.goto(url)
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=self.headless)
+            context = await browser.new_context()
+
+            if device:
+                print("attempting device emulation")
+                emulated_device = p.devices[device]
+                context = await browser.new_context(**emulated_device)
+
+            page = await context.new_page()
+            response = await page.goto(url)
 
             # Close popups
             if self.close_popups:
-                self._find_and_close_popups(page)
+                await self._find_and_close_popups(page)
 
             # Scroll page
-            if self.scroll_page:
-                self._scroll_page(page)
+            if self.scroll_delay > 0:
+                await self._scroll_page(page)
 
             if self.fullscreen:
-                photo = page.screenshot(
-                    path=os.path.join(self.output_dir, f'{filename}.{self.format}'), type=self.format)
+                photo = await page.screenshot(
+                    path=os.path.join(self.output_dir, f'{filename}.{self.format}'), type=self.format, full_page=True)
             else:
-                photo = page.screenshot(
-                    path=os.path.join(self.output_dir, f'{filename}.{self.format}'), full_page=True, type=self.format)
+                photo = await page.screenshot(
+                    path=os.path.join(self.output_dir, f'{filename}.{self.format}'), type=self.format)
 
-            browser.close()
+            await browser.close()
             return photo
