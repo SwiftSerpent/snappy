@@ -64,6 +64,12 @@ class BaseCrawler:
         """
         return urlparse(url).netloc == urlparse(self.base_url).netloc
 
+    def _is_pdf(self, url):
+        """
+        Returns True if the given URL is a PDF, False otherwise.
+        """
+        return url.endswith(('.pdf'))
+
     def _is_image(self, url):
         """
         Returns True if the given URL is an image, False otherwise.
@@ -135,10 +141,12 @@ class UrlCrawler(BaseCrawler):
         self.limit = limit
     async def _get_urls_playwright(self, page, url):
         await page.goto(url)
+        print(url)
         hrefs = await page.query_selector_all("//a[@href]")
         urls = [await href.get_attribute('href') for href in hrefs]
         urls = [urljoin(url, href) for href in urls]
         urls = [href for href in urls if not self._is_image(href)]
+        urls = [href for href in urls if not self._is_pdf(href)]
         urls = [href.strip('/') for href in urls]
         return urls
 
@@ -256,7 +264,7 @@ class ImageCrawler(UrlCrawler):
 
     async def _get_image_info_playwright(self, page, url):
         image_list = []
-        page.goto(url)
+        await page.goto(url)
         images = await page.query_selector_all('img')
 
         for image in images:
